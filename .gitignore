@@ -16,7 +16,7 @@ build/
 *.swp
 .DS_Store
 
-# 本地运行时文件（正常情况下不会出现在仓库里，防手滑）
+# 本地运行时文件
 *.log
 config.json
 state.json

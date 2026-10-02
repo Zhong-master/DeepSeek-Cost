@@ -27,20 +27,20 @@
 
 ![余量提醒](docs/notification.png)
 
-## 功能
+## 功能特性
 
-| 需求 | 实现 |
+| 功能 | 说明 |
 | --- | --- |
-| 系统栏右侧实时显示剩余费用 | 把文字渲染成 PNG 交给 SNI 托盘协议，文字**直接显示在顶栏**（绿色=正常、红色=低于阈值、灰色=数据过期、橙色=未登录/失效） |
-| 首次使用登录个人 DeepSeek 账户 | 登录窗口内嵌官方登录页（WebKitGTK），登录后自动读取登录态令牌；也支持粘贴浏览器令牌或官方 API Key |
-| 每 5 分钟刷新一次 | GLib 定时器，默认 300 秒（可在设置里改 1–240 分钟），日志可查 `定时刷新已设置：每 300 秒` |
-| 点击信息直接刷新 | 菜单第一项就是「¥123.45 · 点击刷新」，点它立即刷新；中键点击图标 = 立即刷新；菜单里也有「立即刷新」/「立即刷新用量」 |
-| 按 API Key 看今日用量（费用 + token），黄色，用户可选 | 第二个（黄色）顶栏指示器显示 `金额·token`；菜单「选择 API Key」可切到任意 Key（或自动选当天用量最大的）；设置里还能只显示金额/只显示 token、或整体关掉 |
-| 软件要小、原生 Linux | Python3 + PyGObject + GTK3 + AyatanaAppIndicator3，无 Electron/浏览器内核常驻；无第三方 pip 依赖（只用标准库 urllib） |
-| 开机自启 | 源码安装写 `~/.config/autostart/`；.deb 安装写 `/etc/xdg/autostart/`（各桌面环境通用） |
-| 不占用过多计算资源 | 空闲 20 秒 CPU tick 增量 = 0；内存 PSS 约 31 MB（RSS 65 MB，多为共享库）；刷新时只做 1–3 次 HTTPS 请求 |
-| 低于 50 弹余量提醒 | libnotify 桌面通知；首次跌破提醒一次，持续偏低每 6 小时再提醒，充值回升后自动重新武装 |
-| 可分发软件包 | `./build-deb.sh` 生成 `dist/deepseek-cost_1.1.2_all.deb`（架构无关，32 KB），`sudo apt install ./xxx.deb` 即可装到任何 Ubuntu |
+| 顶栏实时显示余额 | 余额文字直接贴在系统栏右侧：绿色正常 / 红色低于阈值 / 灰色数据过期 / 橙色未登录或凭据失效 |
+| 按 API Key 看今日用量 | 可选的第二个黄色指示器显示 `金额·token`；菜单里能切换 Key，或自动选择当天用量最大的那个；也可只显示金额或只显示 token |
+| 每 5 分钟自动刷新 | GLib 定时器，间隔可在设置里调整为 1–240 分钟 |
+| 点击即刷新 | 菜单第一项是「¥123.45 · 点击刷新」，点击后立即拉取最新余额；中键点击图标同样立即刷新 |
+| 低余额提醒 | 低于阈值（默认 50）弹出桌面通知；持续偏低每 6 小时复提醒，余额回升后自动重新武装 |
+| 三种登录方式 | 内嵌官方登录页自动获取登录态 / 粘贴浏览器令牌 / 官方 API Key（只读余额，不消耗额度） |
+| 令牌自动续期 | 用邮箱密码登录并勾选「记住密码」后，令牌过期会自动重新登录 |
+| 开机自启 | .deb 写入 `/etc/xdg/autostart`；源码安装写入 `~/.config/autostart` |
+| 小且原生 | GTK3 + AyatanaAppIndicator3（Linux 标准托盘协议）；无 Electron、无第三方 pip 依赖；常驻约 31 MB（PSS）、空闲 CPU ≈0% |
+| 可分发 | `./build-deb.sh` 生成架构无关的 .deb（约 32 KB），`sudo apt install ./xxx.deb` 即可安装到其它 Ubuntu |
 
 菜单内容示意：
 
@@ -119,7 +119,7 @@ $ deepseek-cost --once
 > 余额三种方式都能看；**按 Key 的今日用量只有 1、2 两种网页登录方式能看**（平台私有接口需要网页登录令牌，
 > API Key 无法访问）。用 API Key 登录时黄色指示器会显示「今日不可用」并给出原因。
 
-## 今日用量是怎么来的
+## 数据来源
 
 官方没有公开按 Key 的用量 API，这里用的是平台用量页自己调用的私有只读接口：
 
@@ -143,27 +143,9 @@ $ deepseek-cost --once
   接口返回令牌失效时会用保存的密码自动换新令牌再取余额。
 * **接口格式异常不会误报**：`normal_wallets` 等字段缺失/类型不对时直接报错并把图标置灰，
   绝不把 0 当成余额（否则会误弹「余量不足」）。
-* **低余量提醒判定**是纯函数（`alerts.py::decide_alert`），单独做了单元测试。
-* **单实例**：`flock` 锁文件，重复启动静默退出；用 `--login` 改了配置后，运行中的指示器会在下次刷新前自动重新载入。
+* **低余量提醒判定**：`alerts.py::decide_alert`，纯函数，与 UI 解耦。
+* **单实例**：`flock` 锁文件，重复启动直接退出；`--login` 修改配置后，运行中的指示器会在下次刷新前自动重新载入。
 * **信号处理**：SIGTERM/SIGINT 会先关掉登录/设置窗口再退出（否则嵌套主循环会卡住），并带 1.5 秒兜底强制退出。
-
-## 测试
-
-```bash
-bash tests/run_tests.sh      # 59 个单元/集成用例：配置、格式、渲染、告警判定、令牌提取、
-                             # 三种登录方式、按 Key 今日用量解析、解析健壮性、单实例、CLI 端到端（全离线）
-python3 tests/mock_server.py # 单独启动假接口，便于手工联调（sk-good / sk-low / tok-good / tok-low）
-python3 tests/smoke_gui.py   # 32 项 GUI 端到端检查：真的启动指示器 → 校验 SNI 注册与图标归属、
-                             # 菜单文案、模拟点击刷新、截图检查顶栏像素、低余额通知、
-                             # 令牌过期自动重登录、黄色今日用量指示器
-```
-
-实测结果（本机）：
-
-```
-Ran 59 tests ... OK                                  # 单元/集成
-===== GUI 冒烟测试：32/32 通过 =====                    # 含"正式实例正在运行"时的隔离验证
-```
 
 ## 依赖
 
@@ -210,7 +192,7 @@ src/deepseek_cost/
 assets/deepseek-cost.svg       应用图标
 install.sh / uninstall.sh      源码安装 / 卸载
 build-deb.sh                   .deb 打包（输出到 dist/，发布前改掉 Maintainer/Homepage 占位符）
-tests/                         假接口 + 59 个用例 + 32 项 GUI 冒烟检查
+tests/                         测试用例 + 本地假接口 + GUI 端到端冒烟
 .github/workflows/tests.yml    CI：单元测试 + xvfb 下的 GUI 冒烟
 CHANGELOG.md                   版本变更记录
 CONTRIBUTING.md                开发约定与发布流程
@@ -221,11 +203,13 @@ LICENSE                        MIT
 ## 参与开发
 
 ```bash
-bash tests/run_tests.sh        # 全离线，不需要账号
-python3 tests/mock_server.py   # 起了假接口后可以手工联调
+bash tests/run_tests.sh        # 单元 / 集成测试（全离线，使用本地假接口，不需要账号）
+python3 tests/smoke_gui.py     # GUI 端到端冒烟（需要图形会话与 ffmpeg）
+python3 tests/mock_server.py   # 单独起假接口，便于手工联调
 ```
 
-提交前请保证两套测试全绿、`flake8 --select=F,E9` 无告警；细节见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+提交前请保证上述测试通过、`python3 -m flake8 --select=F,E9 --max-line-length=130 src tests` 无告警；
+开发约定与发布流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可
 

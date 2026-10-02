@@ -293,7 +293,7 @@ def scenario_low(server: MockServer) -> None:
 
 
 def scenario_relogin(server: MockServer) -> None:
-    """C1 回归：auth_mode=account + 记住密码时，令牌过期应自动重新登录。"""
+    """令牌过期时，用记住的密码自动重新登录。"""
     print("\n[3] 令牌过期 + 记住的密码 —— 自动重新登录", flush=True)
     with tempfile.TemporaryDirectory() as tmp:
         workdir, cache = Path(tmp) / "conf", Path(tmp) / "cache"

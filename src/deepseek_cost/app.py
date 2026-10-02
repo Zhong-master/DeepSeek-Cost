@@ -31,7 +31,7 @@ from .render import (  # noqa: E402
 )
 from .ui import LoginDialog, SettingsDialog  # noqa: E402
 
-# 托盘 ID：同一台机器上可以并存多个实例（测试时用环境变量区分）
+# 托盘 ID：允许同一台机器上并存多个实例（可用环境变量指定不同的 ID）
 INDICATOR_ID = os.environ.get("DEEPSEEK_COST_INDICATOR_ID", "deepseek-cost-indicator")
 _DEBUG = False
 

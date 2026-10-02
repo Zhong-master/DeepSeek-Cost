@@ -80,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
     if not lock.acquire():
         print("DeepSeek 余额指示器已在运行。", file=sys.stderr)
         # 开机自启（XSMP 会设置 DESKTOP_AUTOSTART_ID）时保持安静；
-        # 用户手点图标/菜单时给一条提示，免得看起来像“点了没反应/启动失败”。
+        # 手动启动（非开机自启）时给一条反馈，避免用户以为没有启动成功。
         if not os.environ.get("DESKTOP_AUTOSTART_ID"):
             try:
                 from . import notify

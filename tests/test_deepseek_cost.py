@@ -341,7 +341,7 @@ class CliTests(unittest.TestCase):
 
 
 class CredentialUpdateTests(unittest.TestCase):
-    """C1 回归：邮箱+密码登录必须保存 auth_mode="account"，否则自动重登录是死代码。"""
+    """邮箱+密码登录必须保存 auth_mode="account"，自动重登录才可用。"""
 
     def test_account_login_keeps_account_mode_and_password(self) -> None:
         updates = build_credential_updates(
@@ -378,7 +378,7 @@ class CredentialUpdateTests(unittest.TestCase):
 
 
 class ConfigReloadTests(unittest.TestCase):
-    """C11 回归：运行中的实例要能感知 --login 写的新配置。"""
+    """运行中的实例应能感知 --login 写的新配置。"""
 
     def test_reload_detects_external_change(self) -> None:
         import time as _time
@@ -407,7 +407,7 @@ class ConfigReloadTests(unittest.TestCase):
 
 
 class ParseStrictnessTests(unittest.TestCase):
-    """C2 回归：接口格式异常必须报错，绝不能当成 0 元（否则误报余量不足）。"""
+    """接口返回格式异常时必须报错，不能当成 0 元余额。"""
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -442,7 +442,7 @@ class ParseStrictnessTests(unittest.TestCase):
 
 
 class PanelIconIsolationTests(unittest.TestCase):
-    """C4 回归：清理旧图标时不能删掉别的进程正在显示的图标。"""
+    """清理旧图标时不能删掉其它进程正在显示的图标。"""
 
     def test_foreign_icon_survives_cleanup(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -543,7 +543,7 @@ class UsageTests(unittest.TestCase):
 
 
 class LauncherTests(unittest.TestCase):
-    """回归：启动器必须能在“软链接 / 旧路径副本”下找到程序文件（否则 GNOME 显示启动失败）。"""
+    """启动器在软链接 / 非标准路径下也必须能找到程序文件。"""
 
     def _make_tree(self, tmp: Path) -> tuple[Path, Path]:
         import shutil

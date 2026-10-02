@@ -3,7 +3,7 @@
 * ``~/.config/deepseek-cost/config.json`` —— 登录凭据与偏好设置（权限 0600）
 * ``~/.config/deepseek-cost/state.json``  —— 最近一次余额、提醒状态等
 
-两者都可以用环境变量 ``DEEPSEEK_COST_DIR`` 重定向（测试用）。
+两者都可用环境变量 ``DEEPSEEK_COST_DIR`` 指定到其它位置。
 """
 
 from __future__ import annotations

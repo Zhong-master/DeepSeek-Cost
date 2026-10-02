@@ -6,7 +6,7 @@
 2. ``token``     —— 开放平台网页登录态 ``GET /api/v0/users/get_user_summary``（Bearer userToken）
 3. ``account``   —— 邮箱 + 密码调用平台登录接口拿到 userToken，再走方式 2
 
-接口地址可以用环境变量覆盖，方便离线自测：
+接口地址可用环境变量覆盖（自建代理、私有部署或联调环境）：
 ``DEEPSEEK_COST_API_BASE`` / ``DEEPSEEK_COST_PLATFORM_BASE``。
 """
 
