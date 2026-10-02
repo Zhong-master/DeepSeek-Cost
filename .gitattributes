@@ -1,0 +1,10 @@
+# 统一换行符，避免跨平台把整份文件标成改动
+* text=auto eol=lf
+
+# 二进制资源不要做文本处理
+*.png binary
+*.svg text
+*.deb binary
+
+# 让 GitHub 语言统计忽略生成物
+dist/** linguist-generated=true

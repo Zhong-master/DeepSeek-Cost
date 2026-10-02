@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# DeepSeek 余额指示器启动器
+#
+# 安装位置有两种：
+#   * .deb     : /usr/bin/deepseek-cost   + /usr/share/deepseek-cost/src
+#   * 源码安装 : ~/.local/bin/deepseek-cost + ~/.local/share/deepseek-cost/src
+#
+# 兼容通过软链接调用（例如 ~/.local/bin/deepseek-cost -> /usr/bin/deepseek-cost）
+# 以及被遗留在别处的旧副本调用：依次尝试多个候选目录。
+set -euo pipefail
+
+# 解析脚本自身的真实路径（跟随符号链接）
+SELF="${BASH_SOURCE[0]}"
+while [ -L "$SELF" ]; do
+    target="$(readlink "$SELF")"
+    case "$target" in
+        /*) SELF="$target" ;;
+        *) SELF="$(cd "$(dirname "$SELF")" && pwd)/$target" ;;
+    esac
+done
+HERE="$(cd "$(dirname "$SELF")" && pwd)"
+
+SRC=""
+for candidate in \
+    "$HERE/../share/deepseek-cost/src" \
+    "$HERE/../src" \
+    "$HERE/src" \
+    "/usr/share/deepseek-cost/src" \
+    "$HOME/.local/share/deepseek-cost/src"; do
+    if [ -d "$candidate" ] && [ -f "$candidate/deepseek_cost/__main__.py" ]; then
+        SRC="$(cd "$candidate" && pwd)"
+        break
+    fi
+done
+
+if [ -z "$SRC" ]; then
+    echo "deepseek-cost: 找不到程序文件（src/deepseek_cost）。请重新安装：" >&2
+    echo "    sudo apt install --reinstall deepseek-cost     # .deb 安装" >&2
+    echo "    或在仓库目录重新执行 ./install.sh              # 源码安装" >&2
+    exit 1
+fi
+
+export PYTHONPATH="$SRC${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m deepseek_cost "$@"
