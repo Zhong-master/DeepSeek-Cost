@@ -24,7 +24,8 @@ jobs:
       - name: 生成校验和
         run: |
           cd dist
-          sha256sum ./*.deb > SHA256SUMS.txt
+          # 用裸文件名，用户下载后直接 `sha256sum -c SHA256SUMS.txt` 即可
+          sha256sum *.deb > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: 校验包内容
