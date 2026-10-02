@@ -1,14 +1,25 @@
 # DeepSeek 余额指示器（Ubuntu 顶栏）
 
-[![tests](https://github.com/OWNER/deepseek-cost/actions/workflows/tests.yml/badge.svg)](https://github.com/OWNER/deepseek-cost/actions/workflows/tests.yml)
+[![tests](https://github.com/Zhong-master/DeepSeek-Cost/actions/workflows/tests.yml/badge.svg)](https://github.com/Zhong-master/DeepSeek-Cost/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Ubuntu%2022.04%2B%20%7C%20GNOME-orange.svg)](#依赖)
 
-> 开源前把上面的 `OWNER` 换成你的 GitHub 用户名（README 与 `build-deb.sh` 里的占位符同理）。
+## 项目介绍
 
-在 Ubuntu/GNOME 系统栏**右侧**直接显示 DeepSeek API 的剩余费用（例如绿色的 `¥123.45`），
-并且**可按 API Key 用黄色显示今日消耗金额与 token 总量**（例如 `¥1.50 · 2.0M`）。
-余额低于阈值（默认 50）时弹出桌面提醒。原生 GTK3 + AppIndicator（Linux 标准托盘协议），
-常驻内存约 **31 MB（PSS）**，空闲 CPU **≈0%**。
+**不用打开网页、不用敲命令，抬头就能看到 DeepSeek 还剩多少钱、今天花了多少。**
+
+`deepseek-cost` 是一个跑在 Ubuntu/GNOME **系统栏右侧**的原生桌面指示器。它把余额与今日用量
+直接渲染成彩色文字贴在顶栏上：
+
+* 💰 **余额**：绿色 `¥123.45` 正常；低于阈值变红；数据过期变灰；未登录橙色
+* 📊 **今日用量**（可选，黄色 `¥1.50 · 2.0M`）：自选某个 API Key 的今日消耗金额与 token 总量
+* 🔄 **每 5 分钟自动刷新**；点击顶栏文字（菜单第一项）或中键点击图标可立即刷新
+* 🔔 **低于阈值弹桌面通知**（默认 50），持续偏低每 6 小时复提醒，充值回升后自动重新武装
+* 🔐 **三种登录**：内嵌官方登录页自动取登录态 / 浏览器令牌 / 官方 API Key（只读余额，不消耗额度）
+* 🪶 **小且原生**：GTK3 + AyatanaAppIndicator3（Linux 标准托盘协议），无 Electron、无 pip 依赖，
+  常驻内存约 **31 MB（PSS）**、空闲 CPU **≈0%**
+* 📦 **一键装到别的 Ubuntu**：`sudo apt install ./deepseek-cost_1.1.2_all.deb`（架构无关，自动装依赖）
+* 🚀 **开机自启**：安装即写入自启项，登录后自动出现在顶栏
 
 ![顶栏效果](docs/panel.png)
 

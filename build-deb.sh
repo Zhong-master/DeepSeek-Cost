@@ -85,7 +85,7 @@ EOF
 
 say "生成 DEBIAN/control"
 warn() { printf '\033[1;33m提示:\033[0m %s\n' "$*"; }
-warn "发布到公共仓库前，请把本脚本里的 Maintainer / Homepage 占位符改成你自己的信息"
+warn "如需改成你自己的署名，请修改本脚本里的 Maintainer / Homepage 字段"
 INSTALLED_SIZE="$(du -sk "$BUILD/usr" | cut -f1)"
 cat > "$BUILD/DEBIAN/control" <<EOF
 Package: $PKG
@@ -96,8 +96,8 @@ Architecture: $ARCH
 Depends: python3 (>= 3.8), python3-gi, gir1.2-gtk-3.0, gir1.2-ayatanaappindicator3-0.1, libayatana-appindicator3-1, python3-gi-cairo
 Recommends: gir1.2-notify-0.7, libnotify-bin, gir1.2-webkit2-4.1
 Installed-Size: $INSTALLED_SIZE
-Maintainer: Your Name <you@example.com>
-Homepage: https://github.com/OWNER/deepseek-cost
+Maintainer: Zhong-master <damowangazhong@gmail.com>
+Homepage: https://github.com/Zhong-master/DeepSeek-Cost
 Description: Show DeepSeek API remaining balance and today's usage in the Ubuntu system tray
  在 Ubuntu/GNOME 系统栏右侧实时显示 DeepSeek API 剩余费用，可按 API Key 显示今日消耗金额与
  token 总量（黄色）。每 5 分钟自动刷新，点击顶栏文字可立即刷新；余额低于阈值时弹出桌面提醒。

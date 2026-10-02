@@ -10,7 +10,7 @@ sudo apt-get install -y python3-gi python3-gi-cairo python3-pil \
     gir1.2-ayatanaappindicator3-0.1 libayatana-appindicator3-1 \
     gir1.2-notify-0.7 gir1.2-webkit2-4.1 ffmpeg
 
-git clone https://github.com/OWNER/deepseek-cost && cd deepseek-cost
+git clone https://github.com/Zhong-master/DeepSeek-Cost.git && cd DeepSeek-Cost
 ```
 
 不需要登录真实账号：测试全部走本地假接口 `tests/mock_server.py`。
