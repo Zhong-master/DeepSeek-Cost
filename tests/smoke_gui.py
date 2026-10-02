@@ -33,6 +33,10 @@ from mock_server import MockServer  # noqa: E402
 
 ARTIFACTS = Path(tempfile.gettempdir()) / "deepseek-cost-smoke"
 RESULTS: list[tuple[bool, str]] = []
+SKIPPED: list[str] = []
+# 有没有托盘宿主（GNOME 的 ubuntu-appindicators 扩展）。CI 的 xvfb 里没有，
+# 这时与宿主相关的检查（SNI 注册、菜单、点击、顶栏像素）会跳过，其余照常执行。
+HAVE_SNI = True
 
 
 def screen_size() -> tuple[int, int]:
@@ -54,6 +58,11 @@ SCREEN_W, SCREEN_H = screen_size()
 def check(ok: bool, message: str) -> None:
     RESULTS.append((bool(ok), message))
     print(("  ✓ " if ok else "  ✗ ") + message, flush=True)
+
+
+def skip(message: str) -> None:
+    SKIPPED.append(message)
+    print(f"  – 跳过：{message}", flush=True)
 
 
 def wait_for(predicate, timeout: float, interval: float = 0.4):
@@ -111,13 +120,28 @@ def bus_call(dest: str, path: str, interface: str, method: str, signature: str, 
     return bus.call_sync(dest, path, interface, method, GLib.Variant(signature, args), None, 0, 8000, None)
 
 
+def watcher_available() -> bool:
+    try:
+        bus_call("org.kde.StatusNotifierWatcher", "/StatusNotifierWatcher",
+                 "org.freedesktop.DBus.Properties", "Get", "(ss)",
+                 ("org.kde.StatusNotifierWatcher", "RegisteredStatusNotifierItems"))
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def find_indicator(indicator_id: str) -> tuple[str, str] | None:
     """只认本次运行的 indicator id，避免误测其它正在运行的实例。"""
-    reply = bus_call(
-        "org.kde.StatusNotifierWatcher", "/StatusNotifierWatcher",
-        "org.freedesktop.DBus.Properties", "Get", "(ss)",
-        ("org.kde.StatusNotifierWatcher", "RegisteredStatusNotifierItems"),
-    )
+    if not HAVE_SNI:
+        return None
+    try:
+        reply = bus_call(
+            "org.kde.StatusNotifierWatcher", "/StatusNotifierWatcher",
+            "org.freedesktop.DBus.Properties", "Get", "(ss)",
+            ("org.kde.StatusNotifierWatcher", "RegisteredStatusNotifierItems"),
+        )
+    except Exception:  # noqa: BLE001
+        return None
     for item in reply.unpack()[0]:
         if "@" not in item:
             continue
@@ -182,7 +206,10 @@ def scenario_normal(server: MockServer) -> None:
             icon_files = wait_for(lambda: list((cache / "icons").glob("panel-*.png")), 10)
             check(bool(icon_files), f"已生成顶栏文字图标（{len(icon_files or [])} 个文件）")
 
-            item = wait_for(lambda: find_indicator(indicator_id), 20)
+            item = wait_for(lambda: find_indicator(indicator_id), 20) if HAVE_SNI else None
+            if not HAVE_SNI:
+                skip("SNI 注册 / 菜单文案 / 点击刷新 / 顶栏像素（当前会话没有 StatusNotifier 宿主）")
+                return
             check(item is not None, "指示器已注册到 StatusNotifierWatcher（顶栏会显示）")
             if not item:
                 return
@@ -247,8 +274,11 @@ def scenario_low(server: MockServer) -> None:
             shot = grab("notify-low")
             check(shot.exists() and shot.stat().st_size > 5000, f"已截图当前桌面：{shot}")
 
-            check(wait_for(lambda: find_indicator(indicator_id), 15) is not None,
-                  "低余额实例也已注册到 StatusNotifierWatcher")
+            if HAVE_SNI:
+                check(wait_for(lambda: find_indicator(indicator_id), 15) is not None,
+                      "低余额实例也已注册到 StatusNotifierWatcher")
+            else:
+                skip("低余额实例的 SNI 注册（当前会话没有 StatusNotifier 宿主）")
             icon_files = sorted((cache / "icons").glob("panel-*.png"))
             check(bool(icon_files), "低余额状态下生成了顶栏图标")
             if icon_files:
@@ -317,9 +347,21 @@ def scenario_usage(server: MockServer) -> None:
                 return log_path.read_text(encoding="utf-8", errors="replace") if log_path.exists() else ""
 
             check(wait_for(lambda: "刷新成功" in log_text(), 25) is not None, "主余额刷新成功")
-            item = wait_for(lambda: find_indicator(indicator_id + "-usage"), 25)
-            check(item is not None, "黄色用量指示器已注册到 StatusNotifierWatcher")
-            if not item:
+            item = wait_for(lambda: find_indicator(indicator_id + "-usage"), 25) if HAVE_SNI else None
+            if HAVE_SNI:
+                check(item is not None, "黄色用量指示器已注册到 StatusNotifierWatcher")
+            else:
+                skip("黄色用量指示器的 SNI 注册与菜单（当前会话没有 StatusNotifier 宿主）")
+
+            # 不依赖宿主：直接看缓存目录里生成的黄色图标
+            icons = wait_for(lambda: list((cache / "usage-icons").glob("panel-*.png")), 25) or []
+            check(bool(icons), f"已生成用量图标文件（{len(icons)} 个）")
+            if not icons:
+                return
+            icon_path_file = max(icons, key=lambda path: path.stat().st_mtime)
+            yellow = count_color_png(icon_path_file, COLOR_USAGE, tolerance=45)
+            check(yellow > 20, f"用量图标是黄色文字（{yellow} 个黄色像素）")
+            if not HAVE_SNI or item is None:
                 return
             bus_name, object_path = item
             props = bus_call(bus_name, object_path, "org.freedesktop.DBus.Properties", "GetAll", "(s)",
@@ -327,8 +369,6 @@ def scenario_usage(server: MockServer) -> None:
             icon_name = str(props.get("IconName", ""))
             check(icon_name.startswith(str(cache)) and Path(icon_name).exists(),
                   f"用量图标属于本次实例：{icon_name}")
-            yellow = count_color_png(Path(icon_name), COLOR_USAGE, tolerance=45)
-            check(yellow > 20, f"用量图标是黄色文字（{yellow} 个黄色像素）")
 
             layout = bus_call(bus_name, props.get("Menu", "/MenuBar"), "com.canonical.dbusmenu",
                               "GetLayout", "(iias)", (0, -1, [])).unpack()[1]
@@ -384,6 +424,10 @@ def main() -> int:
     if shutil.which("ffmpeg") is None:
         print("缺少 ffmpeg，跳过 GUI 冒烟测试")
         return 0
+    global HAVE_SNI
+    HAVE_SNI = watcher_available()
+    if not HAVE_SNI:
+        print("提示：当前会话没有 StatusNotifier 宿主（如 CI 的 xvfb），宿主相关检查将跳过。")
     server = MockServer().start()
     try:
         scenario_normal(server)
@@ -394,7 +438,11 @@ def main() -> int:
         server.stop()
 
     failed = [message for ok, message in RESULTS if not ok]
-    print(f"\n===== GUI 冒烟测试（屏幕 {SCREEN_W}x{SCREEN_H}）：{len(RESULTS) - len(failed)}/{len(RESULTS)} 通过 =====")
+    summary = (f"\n===== GUI 冒烟测试（屏幕 {SCREEN_W}x{SCREEN_H}）："
+               f"{len(RESULTS) - len(failed)}/{len(RESULTS)} 通过")
+    if SKIPPED:
+        summary += f"，跳过 {len(SKIPPED)} 项"
+    print(summary + " =====")
     for message in failed:
         print(f"  失败：{message}")
     return 1 if failed else 0

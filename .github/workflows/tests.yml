@@ -17,16 +17,19 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             python3-gi python3-gi-cairo python3-pil \
             gir1.2-gtk-3.0 gir1.2-pango-1.0 \
-            gir1.2-ayatanaappindicator3-0.1 libayatana-appindicator3-1
+            gir1.2-ayatanaappindicator3-0.1 libayatana-appindicator3-1 \
+            flake8
 
-      - name: 代码风格检查
-        run: python3 -m flake8 --select=F,E9 --max-line-length=130 src tests || true
+      - name: 代码风格 / 静态检查
+        run: python3 -m flake8 --select=F,E9 --max-line-length=130 src tests
 
       - name: 单元 / 集成测试（全离线，使用本地假接口）
         run: bash tests/run_tests.sh
 
-      # GUI 冒烟测试需要真实的 X 会话与 ffmpeg，CI 里用 xvfb 跑
-      - name: GUI 冒烟测试（xvfb）
+      # GUI 冒烟测试需要一个 X 会话。CI 里没有 GNOME 托盘宿主，
+      # 脚本会自动跳过 SNI/菜单/点击等宿主相关检查，其余（刷新、图标渲染、
+      # 低余额通知、令牌过期重登录、黄色用量图标）照常校验。
+      - name: GUI 冒烟测试（xvfb + 独立 dbus 会话）
         run: |
-          sudo apt-get install -y --no-install-recommends xvfb ffmpeg
-          xvfb-run -a -s "-screen 0 1920x1080x24" python3 tests/smoke_gui.py
+          sudo apt-get install -y --no-install-recommends xvfb ffmpeg dbus-x11
+          xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- python3 tests/smoke_gui.py
