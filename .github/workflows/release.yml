@@ -1,0 +1,45 @@
+name: release
+
+# 打 tag（v1.1.2 这种）就自动构建 .deb 并发布到 GitHub Release，
+# 下载地址形如：
+#   https://github.com/Zhong-master/DeepSeek-Cost/releases/latest/download/deepseek-cost_<版本>_all.deb
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deb:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: 构建 .deb
+        run: ./build-deb.sh
+
+      - name: 生成校验和
+        run: |
+          cd dist
+          sha256sum ./*.deb > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: 校验包内容
+        run: |
+          deb="$(ls dist/*.deb)"
+          dpkg-deb --info "$deb"
+          dpkg-deb -c "$deb" | grep -q usr/bin/deepseek-cost
+          dpkg-deb -c "$deb" | grep -q etc/xdg/autostart/deepseek-cost.desktop
+
+      - name: 发布 Release 资产
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist/*.deb dist/SHA256SUMS.txt \
+            --title "DeepSeek 余额指示器 ${GITHUB_REF_NAME}" \
+            --generate-notes

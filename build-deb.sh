@@ -14,16 +14,21 @@ VERSION="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' "$HERE/src/deepseek_cost/__in
 PKG="deepseek-cost"
 ARCH="all"
 DIST="$HERE/dist"
-BUILD="$DIST/build"
 DEB="$DIST/${PKG}_${VERSION}_${ARCH}.deb"
+# 在临时目录里组装与打包：某些文件系统（NTFS/exFAT/网络盘）上 dpkg-deb 可能
+# 写出损坏的归档，先落地到本地临时目录并校验，再复制到 dist/。
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/${PKG}-deb.XXXXXX")"
+BUILD="$WORK/pkg"
+TMP_DEB="$WORK/${PKG}_${VERSION}_${ARCH}.deb"
+trap 'rm -rf "$WORK"' EXIT
 
 INSTALL_AFTER=0
 [ "${1:-}" = "--install" ] && INSTALL_AFTER=1
 
 say() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 
-say "清理旧的构建目录"
-rm -rf "$BUILD"
+say "在临时目录组装软件包：$WORK"
+mkdir -p "$DIST"
 mkdir -p "$BUILD/DEBIAN" \
          "$BUILD/usr/bin" \
          "$BUILD/usr/share/deepseek-cost/src" \
@@ -138,7 +143,10 @@ chmod 644 "$BUILD/usr/share/applications/"*.desktop "$BUILD/etc/xdg/autostart/"*
 chmod 755 "$BUILD/DEBIAN/postinst" "$BUILD/DEBIAN/prerm" "$BUILD/DEBIAN/postrm"
 
 say "构建 $DEB"
-dpkg-deb --build --root-owner-group "$BUILD" "$DEB" >/dev/null
+dpkg-deb --build --root-owner-group "$BUILD" "$TMP_DEB" >/dev/null
+dpkg-deb --info "$TMP_DEB" >/dev/null || { echo "打包失败：归档校验不通过" >&2; exit 1; }
+install -m 644 "$TMP_DEB" "$DEB"
+dpkg-deb --info "$DEB" >/dev/null || { echo "写入 $DEB 后校验失败（文件系统可能不支持）" >&2; exit 1; }
 echo
 dpkg-deb --info "$DEB" | sed 's/^/    /'
 echo

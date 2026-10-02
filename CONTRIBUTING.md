@@ -42,5 +42,12 @@ CI（`.github/workflows/tests.yml`）会在 ubuntu-24.04 上跑这两套。
 ## 发布新版本（维护者）
 
 1. 改 `src/deepseek_cost/__init__.py` 里的 `__version__`，并在 `CHANGELOG.md` 记录。
-2. `./build-deb.sh` 生成 `dist/deepseek-cost_<版本>_all.deb`。
-3. 打 tag：`git tag v<版本> && git push --tags`，把 .deb 附到 Release 里。
+2. 打 tag 并推送：
+
+   ```bash
+   git tag v<版本> && git push --tags
+   ```
+
+3. `.github/workflows/release.yml` 会自动构建 `.deb`、生成 `SHA256SUMS.txt` 并发布到 Release，
+   下载地址为 `https://github.com/Zhong-master/DeepSeek-Cost/releases/latest/download/deepseek-cost_<版本>_all.deb`。
+   本地想先验证的话，`./build-deb.sh` 的效果与 CI 一致。

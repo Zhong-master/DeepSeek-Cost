@@ -3,6 +3,7 @@
 [![tests](https://github.com/Zhong-master/DeepSeek-Cost/actions/workflows/tests.yml/badge.svg)](https://github.com/Zhong-master/DeepSeek-Cost/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Ubuntu%2022.04%2B%20%7C%20GNOME-orange.svg)](#依赖)
+[![Release](https://img.shields.io/github/v/release/Zhong-master/DeepSeek-Cost?label=%E4%B8%8B%E8%BD%BD%20.deb)](../../releases/latest)
 
 ## 项目介绍
 
@@ -64,13 +65,28 @@
 
 ## 安装
 
-### 方式一：.deb 软件包（推荐分发）
+### 方式一：下载 .deb 安装（推荐）
+
+每个版本都会自动构建并发布到 [Releases](../../releases/latest)：
 
 ```bash
-./build-deb.sh                                        # 生成 dist/deepseek-cost_1.1.2_all.deb
-sudo apt install ./dist/deepseek-cost_1.1.2_all.deb   # 自动安装依赖
-sudo apt remove deepseek-cost                         # 卸载（登录配置保留在 ~/.config/deepseek-cost）
+# 下载最新版（架构无关，约 32 KB）并安装，依赖会自动处理
+curl -LO https://github.com/Zhong-master/DeepSeek-Cost/releases/latest/download/deepseek-cost_1.1.2_all.deb
+sudo apt install ./deepseek-cost_1.1.2_all.deb
+
+sudo apt remove deepseek-cost            # 卸载（登录配置保留在 ~/.config/deepseek-cost）
 ```
+
+Release 页同时提供 `SHA256SUMS.txt`，可用 `sha256sum -c SHA256SUMS.txt` 校验。
+
+也可以自己从源码打包：
+
+```bash
+./build-deb.sh                           # 生成 dist/deepseek-cost_<版本>_all.deb
+```
+
+> 维护者发版：改好 `src/deepseek_cost/__init__.py` 里的版本号并更新 CHANGELOG，然后
+> `git tag v1.1.2 && git push --tags`，`.github/workflows/release.yml` 会自动构建 .deb 并上传到 Release。
 
 包里包含：`/usr/bin/deepseek-cost`、`/usr/share/deepseek-cost/src`、
 两个应用菜单项、图标，以及**系统级开机自启** `/etc/xdg/autostart/deepseek-cost.desktop`。
