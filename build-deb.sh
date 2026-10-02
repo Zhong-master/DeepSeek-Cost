@@ -53,23 +53,11 @@ cat > "$BUILD/usr/share/applications/deepseek-cost.desktop" <<'EOF'
 Type=Application
 Name=DeepSeek 余额
 Name[en]=DeepSeek Balance
-Comment=在系统栏实时显示 DeepSeek API 剩余费用
+Comment=在系统栏实时显示 DeepSeek API 剩余费用与今日用量
 Exec=/usr/bin/deepseek-cost
 Icon=deepseek-cost
 Terminal=false
 Categories=Utility;
-StartupNotify=false
-EOF
-
-cat > "$BUILD/usr/share/applications/deepseek-cost-setup.desktop" <<'EOF'
-[Desktop Entry]
-Type=Application
-Name=DeepSeek 余额 · 登录/设置
-Comment=登录 DeepSeek 账户并配置余量提醒与今日用量
-Exec=/usr/bin/deepseek-cost --login
-Icon=deepseek-cost
-Terminal=false
-Categories=Utility;Settings;
 StartupNotify=false
 EOF
 

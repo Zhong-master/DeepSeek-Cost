@@ -19,7 +19,7 @@
 * 🔐 **三种登录**：内嵌官方登录页自动取登录态 / 浏览器令牌 / 官方 API Key（只读余额，不消耗额度）
 * 🪶 **小且原生**：GTK3 + AyatanaAppIndicator3（Linux 标准托盘协议），无 Electron、无 pip 依赖，
   常驻内存约 **31 MB（PSS）**、空闲 CPU **≈0%**
-* 📦 **一键装到别的 Ubuntu**：`sudo apt install ./deepseek-cost_1.1.2_all.deb`（架构无关，自动装依赖）
+* 📦 **一键装到别的 Ubuntu**：`sudo apt install ./deepseek-cost_1.1.3_all.deb`（架构无关，自动装依赖）
 * 🚀 **开机自启**：安装即写入自启项，登录后自动出现在顶栏
 
 ![顶栏效果](docs/panel.png)
@@ -71,8 +71,8 @@
 
 ```bash
 # 下载最新版（架构无关，约 32 KB）并安装，依赖会自动处理
-curl -LO https://github.com/Zhong-master/DeepSeek-Cost/releases/latest/download/deepseek-cost_1.1.2_all.deb
-sudo apt install ./deepseek-cost_1.1.2_all.deb
+curl -LO https://github.com/Zhong-master/DeepSeek-Cost/releases/latest/download/deepseek-cost_1.1.3_all.deb
+sudo apt install ./deepseek-cost_1.1.3_all.deb
 
 sudo apt remove deepseek-cost            # 卸载（登录配置保留在 ~/.config/deepseek-cost）
 ```

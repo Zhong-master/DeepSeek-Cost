@@ -91,23 +91,11 @@ cat > "$APPS_DIR/deepseek-cost.desktop" <<EOF
 Type=Application
 Name=DeepSeek 余额
 Name[en]=DeepSeek Balance
-Comment=在系统栏实时显示 DeepSeek API 剩余费用
+Comment=在系统栏实时显示 DeepSeek API 剩余费用与今日用量
 Exec=$LAUNCHER
 Icon=deepseek-cost
 Terminal=false
 Categories=Utility;
-StartupNotify=false
-EOF
-
-cat > "$APPS_DIR/deepseek-cost-setup.desktop" <<EOF
-[Desktop Entry]
-Type=Application
-Name=DeepSeek 余额 · 登录/设置
-Comment=登录 DeepSeek 账户并配置余量提醒
-Exec=$LAUNCHER --login
-Icon=deepseek-cost
-Terminal=false
-Categories=Utility;Settings;
 StartupNotify=false
 EOF
 
@@ -125,7 +113,9 @@ X-GNOME-Autostart-enabled=true
 X-GNOME-Autostart-Delay=10
 EOF
 
-chmod 644 "$APPS_DIR"/deepseek-cost*.desktop "$AUTOSTART_DIR/deepseek-cost.desktop" 2>/dev/null || true
+# 清理早期版本可能留下的第二个入口
+rm -f "$APPS_DIR/deepseek-cost-setup.desktop"
+chmod 644 "$APPS_DIR/deepseek-cost.desktop" "$AUTOSTART_DIR/deepseek-cost.desktop" 2>/dev/null || true
 say "已写入开机自启：$AUTOSTART_DIR/deepseek-cost.desktop"
 
 if [ "$TARGET_HOME" != "$HOME" ]; then
